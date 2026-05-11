@@ -7,6 +7,52 @@ const app = express();
 const port = process.env.PORT || 3001;
 const invalidKeyMessage =
   "The server OpenAI API key is invalid or still set to the placeholder. Update server/.env with a real OPENAI_API_KEY and restart the backend.";
+const assistantInstructions = [
+  "You are a concise, helpful AI assistant embedded inside a web application UI.",
+  "Answer the user's latest message using the provided conversation history when it is useful.",
+  "Return only valid JSON. Do not wrap the response in markdown.",
+  "Use this exact shape:",
+  '{"answer":"A concise helpful response for the user.","suggestedQuestions":["A useful follow-up question?","Another useful follow-up question?"]}',
+  "Keep answer as a plain string and suggestedQuestions as 2 to 3 short strings.",
+].join("\n");
+
+function parseAssistantResponse(outputText) {
+  const fallback = {
+    answer: outputText || "I could not generate a response.",
+    suggestedQuestions: [],
+  };
+
+  if (!outputText) {
+    return fallback;
+  }
+
+  try {
+    const jsonText = outputText
+      .trim()
+      .replace(/^```(?:json)?/i, "")
+      .replace(/```$/i, "")
+      .trim();
+    const parsed = JSON.parse(jsonText);
+    const answer =
+      typeof parsed.answer === "string" && parsed.answer.trim()
+        ? parsed.answer.trim()
+        : fallback.answer;
+    const suggestedQuestions = Array.isArray(parsed.suggestedQuestions)
+      ? parsed.suggestedQuestions
+          .filter((question) => typeof question === "string")
+          .map((question) => question.trim())
+          .filter(Boolean)
+          .slice(0, 3)
+      : [];
+
+    return {
+      answer,
+      suggestedQuestions,
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 app.use(
   cors({
@@ -50,9 +96,7 @@ app.post("/api/chat", async (request, response) => {
 
     const result = await openai.responses.create({
       model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-      instructions:
-        process.env.AI_AGENT_SYSTEM_PROMPT ||
-        "You are a concise, helpful AI assistant embedded inside a web application UI.",
+      instructions: assistantInstructions,
       input: [
         ...conversation,
         {
@@ -61,9 +105,11 @@ app.post("/api/chat", async (request, response) => {
         },
       ],
     });
+    const assistant = parseAssistantResponse(result.output_text);
 
     return response.json({
-      reply: result.output_text || "I could not generate a response.",
+      reply: assistant.answer,
+      assistant,
     });
   } catch (error) {
     const openAiStatus = error?.status;
