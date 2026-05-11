@@ -113,10 +113,11 @@ export function AiAgentWidget({
 
       setIsThinking(false);
       await revealAssistantMessage(response);
-    } catch {
+    } catch (error) {
       setIsThinking(false);
       await revealAssistantMessage(
-        "I could not reach the model right now. Please check your API key or chat endpoint."
+        error?.message ||
+          "I could not reach the model right now. Please check your API key or chat endpoint."
       );
     } finally {
       setIsThinking(false);

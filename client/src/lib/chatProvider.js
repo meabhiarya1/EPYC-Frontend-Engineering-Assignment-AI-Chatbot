@@ -17,11 +17,11 @@ async function callBackendEndpoint(message, history, endpoint) {
     body: JSON.stringify({ message, history: previousMessages }),
   });
 
-  if (!response.ok) {
-    throw new Error("Backend chat endpoint failed");
-  }
+  const data = await response.json().catch(() => ({}));
 
-  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Backend chat endpoint failed");
+  }
 
   if (!data.reply) {
     throw new Error("Backend chat endpoint did not return a reply");
