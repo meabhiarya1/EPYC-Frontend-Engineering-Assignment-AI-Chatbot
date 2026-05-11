@@ -1,4 +1,13 @@
-import { ArrowUpRight, Bot, Maximize2, Minimize2, Send, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  Bot,
+  Check,
+  Copy,
+  Maximize2,
+  Minimize2,
+  Send,
+  X,
+} from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { getAgentReply } from "../lib/chatProvider";
 import "./AiAgentWidget.css";
@@ -29,6 +38,7 @@ export function AiAgentWidget({
   const [isThinking, setIsThinking] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [typingMessageId, setTypingMessageId] = useState(null);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
   const inputRef = useRef(null);
 
   const latestMessages = useMemo(() => messages.slice(-8), [messages]);
@@ -114,6 +124,21 @@ export function AiAgentWidget({
     }
   }
 
+  async function handleCopy(message) {
+    if (!message.content) {
+      return;
+    }
+
+    await navigator.clipboard?.writeText(message.content);
+    setCopiedMessageId(message.id);
+
+    window.setTimeout(() => {
+      setCopiedMessageId((currentId) =>
+        currentId === message.id ? null : currentId
+      );
+    }, 1200);
+  }
+
   return (
     <aside className={`ai-agent-shell ${isOpen ? "is-open" : ""}`}>
       <div className="ai-agent-panel" aria-live="polite">
@@ -168,6 +193,22 @@ export function AiAgentWidget({
                 {typingMessageId === message.id && (
                   <span className="ai-agent-cursor" />
                 )}
+                {message.role === "assistant" &&
+                  typingMessageId !== message.id &&
+                  message.content && (
+                    <button
+                      className="ai-agent-copy"
+                      type="button"
+                      onClick={() => handleCopy(message)}
+                      aria-label="Copy assistant response"
+                    >
+                      {copiedMessageId === message.id ? (
+                        <Check size={14} />
+                      ) : (
+                        <Copy size={14} />
+                      )}
+                    </button>
+                  )}
               </article>
             ))}
             {isThinking && (
