@@ -1,4 +1,4 @@
-import { AiAgentWidget } from "./components/AiAgentWidget";
+import { AiAgentProvider } from "./components/AiAgentProvider";
 
 const activity = [
   ["Lead scoring", "High intent", "92%"],
@@ -13,12 +13,11 @@ const insights = [
 ];
 
 export default function App() {
-  const provider = {
-    endpoint: import.meta.env.VITE_AI_AGENT_ENDPOINT,
-  };
-
   return (
-    <>
+    <AiAgentProvider
+      title="ProtoAI"
+      endpoint={import.meta.env.VITE_AI_AGENT_ENDPOINT}
+    >
       <main className="demo-page">
         <nav className="demo-nav" aria-label="Demo navigation">
           <div className="demo-mark">A</div>
@@ -102,7 +101,6 @@ export default function App() {
           </div>
         </section>
       </main>
-      <AiAgentWidget title="ProtoAI" provider={provider} />
-    </>
+    </AiAgentProvider>
   );
 }

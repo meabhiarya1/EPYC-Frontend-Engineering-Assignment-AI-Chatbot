@@ -45,22 +45,43 @@ npm run dev:client
 
 ## Usage
 
+After publishing or installing the package, keep your deployed backend URL in
+`.env`:
+
+```env
+VITE_AI_AGENT_ENDPOINT=https://your-deployed-backend.com/api/chat
+```
+
+Then import the CSS once and wrap your app at the root level:
+
 ```jsx
-import { AiAgentWidget } from "./components/AiAgentWidget";
+import { AiAgentProvider } from "epyc-ai-agent-widget";
+import "epyc-ai-agent-widget/style.css";
 
 export function App() {
   return (
-    <>
+    <AiAgentProvider
+      title="ProtoAI"
+      endpoint={import.meta.env.VITE_AI_AGENT_ENDPOINT}
+    >
       <YourExistingUi />
-      <AiAgentWidget
-        title="ProtoAI"
-        provider={{
-          endpoint: import.meta.env.VITE_AI_AGENT_ENDPOINT,
-        }}
-      />
-    </>
+    </AiAgentProvider>
   );
 }
+```
+
+You can still render the widget manually if you need more control:
+
+```jsx
+import { AiAgentWidget } from "epyc-ai-agent-widget";
+import "epyc-ai-agent-widget/style.css";
+
+<AiAgentWidget
+  title="ProtoAI"
+  provider={{
+    endpoint: import.meta.env.VITE_AI_AGENT_ENDPOINT,
+  }}
+/>;
 ```
 
 ## Backend Endpoint Contract
