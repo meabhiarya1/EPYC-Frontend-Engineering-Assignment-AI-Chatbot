@@ -27,15 +27,60 @@ export function AiAgentWidget({
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState(initialMessages);
   const [isThinking, setIsThinking] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingMessageId, setTypingMessageId] = useState(null);
   const inputRef = useRef(null);
 
   const latestMessages = useMemo(() => messages.slice(-8), [messages]);
+
+  function revealAssistantMessage(content) {
+    const messageId = createId();
+    const tokens = content.match(/\S+\s*/g) ?? [content];
+
+    setTypingMessageId(messageId);
+    setIsTyping(true);
+    setMessages((current) => [
+      ...current,
+      {
+        id: messageId,
+        role: "assistant",
+        content: "",
+      },
+    ]);
+
+    return new Promise((resolve) => {
+      let tokenIndex = 0;
+
+      const intervalId = window.setInterval(() => {
+        tokenIndex += 1;
+        const nextContent = tokens.slice(0, tokenIndex).join("");
+
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === messageId
+              ? {
+                  ...message,
+                  content: nextContent,
+                }
+              : message
+          )
+        );
+
+        if (tokenIndex >= tokens.length) {
+          window.clearInterval(intervalId);
+          setTypingMessageId(null);
+          setIsTyping(false);
+          resolve();
+        }
+      }, 54);
+    });
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
     const trimmed = input.trim();
 
-    if (!trimmed || isThinking) {
+    if (!trimmed || isThinking || isTyping) {
       return;
     }
 
@@ -56,26 +101,16 @@ export function AiAgentWidget({
         ? await onSend(trimmed, nextMessages)
         : await getAgentReply(trimmed, nextMessages, provider);
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: createId(),
-          role: "assistant",
-          content: response,
-        },
-      ]);
+      setIsThinking(false);
+      await revealAssistantMessage(response);
     } catch {
-      setMessages((current) => [
-        ...current,
-        {
-          id: createId(),
-          role: "assistant",
-          content:
-            "I could not reach the model right now. Please check your API key or chat endpoint.",
-        },
-      ]);
+      setIsThinking(false);
+      await revealAssistantMessage(
+        "I could not reach the model right now. Please check your API key or chat endpoint."
+      );
     } finally {
       setIsThinking(false);
+      setIsTyping(false);
     }
   }
 
@@ -124,10 +159,15 @@ export function AiAgentWidget({
           <div className="ai-agent-messages">
             {latestMessages.map((message) => (
               <article
-                className={`ai-agent-message is-${message.role}`}
+                className={`ai-agent-message is-${message.role} ${
+                  typingMessageId === message.id ? "is-typing" : ""
+                }`}
                 key={message.id}
               >
                 {message.content}
+                {typingMessageId === message.id && (
+                  <span className="ai-agent-cursor" />
+                )}
               </article>
             ))}
             {isThinking && (
@@ -153,7 +193,7 @@ export function AiAgentWidget({
             className="ai-agent-send"
             type="submit"
             aria-label="Send message"
-            disabled={!input.trim() || isThinking}
+            disabled={!input.trim() || isThinking || isTyping}
           >
             {isOpen ? <Send size={18} /> : <ArrowUpRight size={22} />}
           </button>
