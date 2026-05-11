@@ -327,6 +327,9 @@ export function AiAgentWidget({
             {isOpen ? <Send size={18} /> : <ArrowUpRight size={22} />}
           </button>
         </form>
+        <p className="ai-agent-disclaimer">
+          AI may be imperfect at times. Please re-check the responses.
+        </p>
       </div>
     </aside>
   );

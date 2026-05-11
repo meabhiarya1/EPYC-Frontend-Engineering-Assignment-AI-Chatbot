@@ -141,6 +141,14 @@
   border-radius: 24px;
 }
 
+.ai-agent-disclaimer {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .ai-agent-composer input {
   min-width: 0;
   height: 58px;
