@@ -36,7 +36,7 @@ export default function App() {
       title="ProtoAI"
       endpoint={import.meta.env.VITE_AI_AGENT_ENDPOINT}
     >
-      <YourExistingApp />
+      <App />
     </AiAgentProvider>
   );
 }
@@ -52,7 +52,7 @@ That is the main integration. The provider renders your app normally and places 
   placeholder="Ask anything..."
   endpoint={import.meta.env.VITE_AI_AGENT_ENDPOINT}
 >
-  <YourExistingApp />
+  <App />
 </AiAgentProvider>
 ```
 
@@ -130,5 +130,5 @@ export function App() {
 1. Install the package.
 2. Add `VITE_AI_AGENT_ENDPOINT` in `.env`.
 3. Import the package CSS.
-4. Wrap your app with `AiAgentProvider`.
+4. Wrap your app with `AiAgentProvider` in main.jsx (App.jsx).
 5. Run your frontend and start chatting.
