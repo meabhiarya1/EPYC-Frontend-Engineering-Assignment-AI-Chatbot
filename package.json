@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./dist/epyc-ai-agent-widget.umd.cjs",
+  "module": "./dist/epyc-ai-agent-widget.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/epyc-ai-agent-widget.js",
+      "require": "./dist/epyc-ai-agent-widget.umd.cjs"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
