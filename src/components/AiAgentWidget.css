@@ -34,6 +34,8 @@
 }
 
 .ai-agent-shell.is-open .ai-agent-panel {
+  display: flex;
+  flex-direction: column;
   width: min(1180px, calc(100vw - 48px));
   min-height: calc(100vh - 64px);
   padding: clamp(18px, 2.4vw, 28px);
@@ -191,8 +193,9 @@
 }
 
 .ai-agent-shell.is-open .ai-agent-messages {
-  max-height: calc(100vh - 250px);
   flex: 1;
+  min-height: 0;
+  max-height: none;
 }
 
 .ai-agent-message {

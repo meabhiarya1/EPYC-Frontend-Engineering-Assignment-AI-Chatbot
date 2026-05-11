@@ -145,7 +145,6 @@ export function AiAgentWidget({
           <input
             ref={inputRef}
             value={input}
-            onFocus={() => setIsOpen(true)}
             onChange={(event) => setInput(event.target.value)}
             placeholder={placeholder}
             aria-label={placeholder}
