@@ -1,6 +1,12 @@
 import { AiAgentWidget } from "./components/AiAgentWidget";
 
 export default function App() {
+  const provider = {
+    apiKey: import.meta.env.VITE_AI_AGENT_API_KEY,
+    endpoint: import.meta.env.VITE_AI_AGENT_ENDPOINT,
+    model: import.meta.env.VITE_AI_AGENT_MODEL,
+  };
+
   return (
     <>
       <main className="demo-page">
@@ -12,7 +18,7 @@ export default function App() {
           </p>
         </section>
       </main>
-      <AiAgentWidget title="ProtoAI" />
+      <AiAgentWidget title="ProtoAI" provider={provider} />
     </>
   );
 }

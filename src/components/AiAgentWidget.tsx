@@ -1,5 +1,6 @@
 import { ArrowUpRight, Bot, Maximize2, Minimize2, Send, X } from "lucide-react";
 import { FormEvent, useMemo, useRef, useState } from "react";
+import { ChatProviderConfig, getAgentReply } from "../lib/chatProvider";
 import "./AiAgentWidget.css";
 
 export type AgentMessage = {
@@ -12,6 +13,7 @@ export type AiAgentWidgetProps = {
   title?: string;
   placeholder?: string;
   initialMessages?: AgentMessage[];
+  provider?: ChatProviderConfig;
   onSend?: (message: string, history: AgentMessage[]) => Promise<string>;
 };
 
@@ -28,15 +30,11 @@ function createId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 }
 
-async function defaultResponder(message: string) {
-  await new Promise((resolve) => window.setTimeout(resolve, 850));
-  return `I received: "${message}". Connect an API key or backend endpoint to make this answer come from your model.`;
-}
-
 export function AiAgentWidget({
   title = "AI Agent",
   placeholder = "Ask anything...",
   initialMessages = defaultMessages,
+  provider = {},
   onSend,
 }: AiAgentWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -70,7 +68,7 @@ export function AiAgentWidget({
     try {
       const response = onSend
         ? await onSend(trimmed, nextMessages)
-        : await defaultResponder(trimmed);
+        : await getAgentReply(trimmed, nextMessages, provider);
 
       setMessages((current) => [
         ...current,
