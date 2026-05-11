@@ -5,10 +5,11 @@ import {
   Copy,
   Maximize2,
   Minimize2,
+  Plus,
   Send,
   X,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getAgentReply } from "../lib/chatProvider";
 import "./AiAgentWidget.css";
 
@@ -21,8 +22,36 @@ const defaultMessages = [
   },
 ];
 
+const storageKey = "epyc-ai-agent-widget:messages";
+
 function createId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+}
+
+function getStoredMessages() {
+  try {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const storedMessages = window.localStorage.getItem(storageKey);
+
+    if (!storedMessages) {
+      return null;
+    }
+
+    const parsedMessages = JSON.parse(storedMessages);
+
+    return Array.isArray(parsedMessages) && parsedMessages.length
+      ? parsedMessages
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function hasSavedConversation(messages) {
+  return Boolean(messages?.some((message) => message.role === "user"));
 }
 
 export function AiAgentWidget({
@@ -32,16 +61,48 @@ export function AiAgentWidget({
   provider = {},
   onSend,
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const resetMessages = useMemo(() => initialMessages, [initialMessages]);
+  const storedMessages = useMemo(() => getStoredMessages(), []);
+  const [isOpen, setIsOpen] = useState(() =>
+    hasSavedConversation(storedMessages)
+  );
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState(() =>
+    storedMessages?.length ? storedMessages : resetMessages
+  );
   const [isThinking, setIsThinking] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [typingMessageId, setTypingMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
   const inputRef = useRef(null);
+  const messagesRef = useRef(null);
+  const shouldSkipNextPersistRef = useRef(false);
 
-  const latestMessages = useMemo(() => messages.slice(-8), [messages]);
+  useEffect(() => {
+    if (shouldSkipNextPersistRef.current) {
+      shouldSkipNextPersistRef.current = false;
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    if (!hasSavedConversation(messages)) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    window.localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    if (!isOpen || !messagesRef.current) {
+      return;
+    }
+
+    messagesRef.current.scrollTo({
+      top: messagesRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [isOpen, messages, isThinking]);
 
   function revealAssistantMessage(content) {
     const messageId = createId();
@@ -140,6 +201,22 @@ export function AiAgentWidget({
     }, 1200);
   }
 
+  function clearChat({ keepOpen } = { keepOpen: false }) {
+    shouldSkipNextPersistRef.current = true;
+    setMessages(resetMessages);
+    setInput("");
+    setIsThinking(false);
+    setIsTyping(false);
+    setTypingMessageId(null);
+    setCopiedMessageId(null);
+    window.localStorage.removeItem(storageKey);
+    setIsOpen(keepOpen);
+
+    if (keepOpen) {
+      window.setTimeout(() => inputRef.current?.focus(), 120);
+    }
+  }
+
   return (
     <aside className={`ai-agent-shell ${isOpen ? "is-open" : ""}`}>
       <div className="ai-agent-panel" aria-live="polite">
@@ -160,6 +237,16 @@ export function AiAgentWidget({
           </button>
 
           <div className="ai-agent-actions">
+            {isOpen && (
+              <button
+                className="ai-agent-icon-button"
+                type="button"
+                onClick={() => clearChat({ keepOpen: true })}
+                aria-label="Start new chat"
+              >
+                <Plus size={18} />
+              </button>
+            )}
             <button
               className="ai-agent-icon-button"
               type="button"
@@ -172,8 +259,8 @@ export function AiAgentWidget({
               <button
                 className="ai-agent-icon-button"
                 type="button"
-                onClick={() => setIsOpen(false)}
-                aria-label="Close AI agent"
+                onClick={() => clearChat({ keepOpen: false })}
+                aria-label="Clear and close AI agent"
               >
                 <X size={18} />
               </button>
@@ -182,8 +269,8 @@ export function AiAgentWidget({
         </div>
 
         {isOpen && (
-          <div className="ai-agent-messages">
-            {latestMessages.map((message) => (
+          <div className="ai-agent-messages" ref={messagesRef}>
+            {messages.map((message) => (
               <article
                 className={`ai-agent-message is-${message.role} ${
                   typingMessageId === message.id ? "is-typing" : ""
