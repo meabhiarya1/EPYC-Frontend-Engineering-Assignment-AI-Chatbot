@@ -1,6 +1,6 @@
 # EPYC AI Agent Widget
 
-A reusable React overlay assistant that can sit on top of any frontend. It starts as a compact transparent-black input box and expands into a larger chat workspace when the user focuses or sends a message.
+A reusable React overlay assistant that can sit on top of any frontend. The client only calls your backend API; the backend keeps the real model key private.
 
 ## Features
 
@@ -8,23 +8,40 @@ A reusable React overlay assistant that can sit on top of any frontend. It start
 - Compact input state inspired by the assignment reference
 - Smooth expansion into a larger chat panel
 - Thinking state and chat history rendering
-- Configurable provider: backend endpoint, OpenAI-compatible API key, or mock mode
+- Configurable backend provider endpoint, with mock mode when no endpoint is set
 - Responsive mobile full-screen behavior
+
+## Project Structure
+
+- `client/` - React widget package and demo app
+- `server/` - Express API that calls OpenAI securely
 
 ## Local Setup
 
 ```bash
 npm install
-npm run dev
+cp client/.env.example client/.env
+cp server/.env.example server/.env
 ```
 
-Create `.env` from `.env.example` when you want to connect a model.
+Add your real server-side key in `server/.env`:
+
+```env
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Run the backend:
 
 ```bash
-cp .env.example .env
+npm run dev:server
 ```
 
-For production, prefer `VITE_AI_AGENT_ENDPOINT` so API keys stay on your server. Direct browser API keys are included only for quick demo/testing.
+Run the client in another terminal:
+
+```bash
+npm run dev:client
+```
 
 ## Usage
 
@@ -39,8 +56,6 @@ export function App() {
         title="ProtoAI"
         provider={{
           endpoint: import.meta.env.VITE_AI_AGENT_ENDPOINT,
-          apiKey: import.meta.env.VITE_AI_AGENT_API_KEY,
-          model: import.meta.env.VITE_AI_AGENT_MODEL,
         }}
       />
     </>
@@ -50,7 +65,7 @@ export function App() {
 
 ## Backend Endpoint Contract
 
-If you provide `VITE_AI_AGENT_ENDPOINT`, the widget sends:
+The widget sends this request to `VITE_AI_AGENT_ENDPOINT`:
 
 ```json
 {

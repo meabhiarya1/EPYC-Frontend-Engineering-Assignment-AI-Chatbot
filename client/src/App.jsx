@@ -14,9 +14,7 @@ const insights = [
 
 export default function App() {
   const provider = {
-    apiKey: import.meta.env.VITE_AI_AGENT_API_KEY,
     endpoint: import.meta.env.VITE_AI_AGENT_ENDPOINT,
-    model: import.meta.env.VITE_AI_AGENT_MODEL,
   };
 
   return (
