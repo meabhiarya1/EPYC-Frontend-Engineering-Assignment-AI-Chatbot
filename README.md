@@ -28,7 +28,7 @@ For production, prefer `VITE_AI_AGENT_ENDPOINT` so API keys stay on your server.
 
 ## Usage
 
-```tsx
+```jsx
 import { AiAgentWidget } from "./components/AiAgentWidget";
 
 export function App() {

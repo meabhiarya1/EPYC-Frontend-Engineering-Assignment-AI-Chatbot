@@ -1,23 +1,9 @@
 import { ArrowUpRight, Bot, Maximize2, Minimize2, Send, X } from "lucide-react";
-import { FormEvent, useMemo, useRef, useState } from "react";
-import { ChatProviderConfig, getAgentReply } from "../lib/chatProvider";
+import { useMemo, useRef, useState } from "react";
+import { getAgentReply } from "../lib/chatProvider";
 import "./AiAgentWidget.css";
 
-export type AgentMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
-
-export type AiAgentWidgetProps = {
-  title?: string;
-  placeholder?: string;
-  initialMessages?: AgentMessage[];
-  provider?: ChatProviderConfig;
-  onSend?: (message: string, history: AgentMessage[]) => Promise<string>;
-};
-
-const defaultMessages: AgentMessage[] = [
+const defaultMessages = [
   {
     id: "welcome",
     role: "assistant",
@@ -36,16 +22,16 @@ export function AiAgentWidget({
   initialMessages = defaultMessages,
   provider = {},
   onSend,
-}: AiAgentWidgetProps) {
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState(initialMessages);
   const [isThinking, setIsThinking] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef(null);
 
   const latestMessages = useMemo(() => messages.slice(-8), [messages]);
 
-  async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const trimmed = input.trim();
 
@@ -53,7 +39,7 @@ export function AiAgentWidget({
       return;
     }
 
-    const userMessage: AgentMessage = {
+    const userMessage = {
       id: createId(),
       role: "user",
       content: trimmed,

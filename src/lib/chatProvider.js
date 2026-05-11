@@ -1,17 +1,4 @@
-import type { AgentMessage } from "../components/AiAgentWidget";
-
-export type ChatProviderConfig = {
-  apiKey?: string;
-  endpoint?: string;
-  model?: string;
-  systemPrompt?: string;
-};
-
-export async function getAgentReply(
-  message: string,
-  history: AgentMessage[],
-  config: ChatProviderConfig
-) {
+export async function getAgentReply(message, history, config) {
   if (!config.apiKey && !config.endpoint) {
     return getMockReply(message);
   }
@@ -23,11 +10,7 @@ export async function getAgentReply(
   return callOpenAiCompatibleEndpoint(message, history, config);
 }
 
-async function callBackendEndpoint(
-  message: string,
-  history: AgentMessage[],
-  endpoint: string
-) {
+async function callBackendEndpoint(message, history, endpoint) {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -40,7 +23,7 @@ async function callBackendEndpoint(
     throw new Error("Backend chat endpoint failed");
   }
 
-  const data = (await response.json()) as { reply?: string };
+  const data = await response.json();
 
   if (!data.reply) {
     throw new Error("Backend chat endpoint did not return a reply");
@@ -49,11 +32,7 @@ async function callBackendEndpoint(
   return data.reply;
 }
 
-async function callOpenAiCompatibleEndpoint(
-  message: string,
-  history: AgentMessage[],
-  config: ChatProviderConfig
-) {
+async function callOpenAiCompatibleEndpoint(message, history, config) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -86,10 +65,7 @@ async function callOpenAiCompatibleEndpoint(
     throw new Error("Model request failed");
   }
 
-  const data = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-
+  const data = await response.json();
   const reply = data.choices?.[0]?.message?.content;
 
   if (!reply) {
@@ -99,7 +75,7 @@ async function callOpenAiCompatibleEndpoint(
   return reply;
 }
 
-async function getMockReply(message: string) {
+async function getMockReply(message) {
   await new Promise((resolve) => window.setTimeout(resolve, 850));
 
   return [
