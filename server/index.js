@@ -12,44 +12,110 @@ const assistantInstructions = [
   "Return only valid JSON. Do not wrap the response in markdown.",
   "Use this exact shape:",
   '{"answer":"A concise helpful response for the user.","suggestedQuestions":["A useful follow-up question?","Another useful follow-up question?"]}',
+  "Do not include any text before or after the JSON object.",
   "Keep answer as a plain string and suggestedQuestions as 2 to 3 short strings.",
 ].join("\n");
 
-function parseAssistantResponse(outputText) {
-  const fallback = {
-    answer: outputText || "I could not generate a response.",
-    suggestedQuestions: [],
-  };
-
+function extractJsonObject(outputText) {
   if (!outputText) {
-    return fallback;
+    return "";
+  }
+
+  const cleaned = outputText
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  const startIndex = cleaned.indexOf("{");
+
+  if (startIndex === -1) {
+    return cleaned;
+  }
+
+  let depth = 0;
+  let isInsideString = false;
+  let isEscaped = false;
+
+  for (let index = startIndex; index < cleaned.length; index += 1) {
+    const character = cleaned[index];
+
+    if (isEscaped) {
+      isEscaped = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      isEscaped = true;
+      continue;
+    }
+
+    if (character === '"') {
+      isInsideString = !isInsideString;
+      continue;
+    }
+
+    if (isInsideString) {
+      continue;
+    }
+
+    if (character === "{") {
+      depth += 1;
+    }
+
+    if (character === "}") {
+      depth -= 1;
+    }
+
+    if (depth === 0) {
+      return cleaned.slice(startIndex, index + 1);
+    }
+  }
+
+  return cleaned;
+}
+
+function normalizeSuggestedQuestions(suggestedQuestions) {
+  return Array.isArray(suggestedQuestions)
+    ? suggestedQuestions
+        .filter((question) => typeof question === "string")
+        .map((question) => question.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
+}
+
+function parseAssistantResponse(outputText) {
+  if (!outputText) {
+    return {
+      answer: "I could not generate a response.",
+      suggestedQuestions: [],
+    };
   }
 
   try {
-    const jsonText = outputText
-      .trim()
-      .replace(/^```(?:json)?/i, "")
-      .replace(/```$/i, "")
-      .trim();
-    const parsed = JSON.parse(jsonText);
-    const answer =
-      typeof parsed.answer === "string" && parsed.answer.trim()
-        ? parsed.answer.trim()
-        : fallback.answer;
-    const suggestedQuestions = Array.isArray(parsed.suggestedQuestions)
-      ? parsed.suggestedQuestions
-          .filter((question) => typeof question === "string")
-          .map((question) => question.trim())
-          .filter(Boolean)
-          .slice(0, 3)
-      : [];
+    const parsed = JSON.parse(extractJsonObject(outputText));
 
     return {
-      answer,
-      suggestedQuestions,
+      answer:
+        typeof parsed.answer === "string" && parsed.answer.trim()
+          ? parsed.answer.trim()
+          : "I could not generate a response.",
+      suggestedQuestions: normalizeSuggestedQuestions(
+        parsed.suggestedQuestions
+      ),
     };
   } catch {
-    return fallback;
+    console.warn("Gemini returned non-JSON assistant text.");
+
+    return {
+      answer:
+        "I received a malformed model response. Please try again with a shorter question.",
+      suggestedQuestions: [
+        "Can you answer that again?",
+        "Can you summarize your response?",
+        "What can you help me with?",
+      ],
+    };
   }
 }
 
