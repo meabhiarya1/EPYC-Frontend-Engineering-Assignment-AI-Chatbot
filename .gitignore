@@ -1,6 +1,7 @@
 node_modules
 dist
 client/dist
+ai-chatbot-package-demo
 .env
 .DS_Store
 *.tsbuildinfo
