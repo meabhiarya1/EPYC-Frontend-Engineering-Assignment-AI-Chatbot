@@ -1,5 +1,5 @@
 const cards = [
-  ["Installed package", "epyc-ai-agent-widget@latest"],
+  ["Installed package", "ai-chatbot-package-demo@latest"],
   ["Provider location", "AiAgentProvider wraps <App /> in main.jsx"],
   ["Backend endpoint", "Loaded from VITE_AI_AGENT_ENDPOINT"],
 ];
