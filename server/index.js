@@ -1,12 +1,11 @@
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
-import OpenAI from "openai";
 
 const app = express();
 const port = process.env.PORT || 3001;
 const invalidKeyMessage =
-  "The server OpenAI API key is invalid or still set to the placeholder. Update server/.env with a real OPENAI_API_KEY and restart the backend.";
+  "The server Gemini API key is missing, invalid, or still set to the placeholder. Update server/.env with a real GEMINI_API_KEY and restart the backend.";
 const assistantInstructions = [
   "You are a concise, helpful AI assistant embedded inside a web application UI.",
   "Answer the user's latest message using the provided conversation history when it is useful.",
@@ -54,6 +53,78 @@ function parseAssistantResponse(outputText) {
   }
 }
 
+function toGeminiContent(item) {
+  return {
+    role: item.role === "assistant" ? "model" : "user",
+    parts: [
+      {
+        text: String(item.content),
+      },
+    ],
+  };
+}
+
+function extractGeminiText(result) {
+  return (
+    result?.candidates?.[0]?.content?.parts
+      ?.map((part) => part?.text || "")
+      .join("")
+      .trim() || ""
+  );
+}
+
+async function createGeminiResponse({ apiKey, message, history }) {
+  const model = process.env.GEMINI_MODEL || "gemini-flash-latest";
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const conversation = history
+    .filter((item) => item?.role && item?.content)
+    .map(toGeminiContent);
+
+  const geminiResponse = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-goog-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [
+          {
+            text: assistantInstructions,
+          },
+        ],
+      },
+      contents: [
+        ...conversation,
+        {
+          role: "user",
+          parts: [
+            {
+              text: message,
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    }),
+  });
+
+  const result = await geminiResponse.json().catch(() => ({}));
+
+  if (!geminiResponse.ok) {
+    const error = new Error(
+      result?.error?.message || "Gemini API request failed."
+    );
+    error.status = geminiResponse.status;
+    error.code = result?.error?.status;
+    throw error;
+  }
+
+  return extractGeminiText(result);
+}
+
 app.use(
   cors({
     origin: "*",
@@ -67,9 +138,9 @@ app.get("/health", (_request, response) => {
 
 app.post("/api/chat", async (request, response) => {
   try {
-    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
 
-    if (!apiKey || apiKey === "your_api_key_here") {
+    if (!apiKey || apiKey === "your_gemini_key_here") {
       return response.status(500).json({
         error: invalidKeyMessage,
       });
@@ -83,47 +154,36 @@ app.post("/api/chat", async (request, response) => {
       });
     }
 
-    const openai = new OpenAI({
+    const outputText = await createGeminiResponse({
       apiKey,
+      message,
+      history,
     });
-
-    const conversation = history
-      .filter((item) => item?.role && item?.content)
-      .map((item) => ({
-        role: item.role === "assistant" ? "assistant" : "user",
-        content: String(item.content),
-      }));
-
-    const result = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-      instructions: assistantInstructions,
-      input: [
-        ...conversation,
-        {
-          role: "user",
-          content: message,
-        },
-      ],
-    });
-    const assistant = parseAssistantResponse(result.output_text);
+    const assistant = parseAssistantResponse(outputText);
 
     return response.json({
       reply: assistant.answer,
       assistant,
     });
   } catch (error) {
-    const openAiStatus = error?.status;
-    const openAiCode = error?.code;
+    const geminiStatus = error?.status;
+    const geminiCode = error?.code;
 
-    if (openAiStatus === 401 || openAiCode === "invalid_api_key") {
-      console.warn("Chat API auth error: invalid OpenAI API key.");
+    if (
+      geminiStatus === 400 ||
+      geminiStatus === 401 ||
+      geminiStatus === 403 ||
+      geminiCode === "PERMISSION_DENIED" ||
+      geminiCode === "UNAUTHENTICATED"
+    ) {
+      console.warn("Chat API auth error: invalid Gemini API key.");
 
-      return response.status(401).json({
+      return response.status(geminiStatus === 400 ? 400 : 401).json({
         error: invalidKeyMessage,
       });
     }
 
-    if (openAiStatus === 429) {
+    if (geminiStatus === 429) {
       console.warn("Chat API rate limit/quota error.");
 
       return response.status(429).json({
