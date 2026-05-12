@@ -1,37 +1,20 @@
 {
-  "name": "epyc-ai-agent-widget",
+  "name": "epyc-ai-agent-widget-client-demo",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "main": "./dist/epyc-ai-agent-widget.umd.cjs",
-  "module": "./dist/epyc-ai-agent-widget.js",
-  "style": "./dist/epyc-ai-agent-widget.css",
-  "files": [
-    "dist"
-  ],
-  "sideEffects": [
-    "*.css"
-  ],
-  "exports": {
-    ".": {
-      "import": "./dist/epyc-ai-agent-widget.js",
-      "require": "./dist/epyc-ai-agent-widget.umd.cjs"
-    },
-    "./style.css": "./dist/epyc-ai-agent-widget.css"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install-widget": "npm install epyc-ai-agent-widget@latest",
+    "remove-widget": "npm uninstall epyc-ai-agent-widget",
+    "build-package": "npm --prefix ../package run build",
+    "pack-package": "npm --prefix ../package run pack:dry-run"
   },
   "dependencies": {
-    "lucide-react": "^0.468.0"
-  },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
     "@vitejs/plugin-react": "^5.0.0",
+    "epyc-ai-agent-widget": "^0.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vite": "^7.0.0"
