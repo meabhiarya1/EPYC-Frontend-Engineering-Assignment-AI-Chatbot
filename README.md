@@ -27,8 +27,8 @@ After changing `.env`, restart your frontend dev server so Vite can load the new
 Import the provider and package CSS once at the top level of your app.
 
 ```jsx
-import { AiAgentProvider } from "epyc-ai-agent-widget";
-import "epyc-ai-agent-widget/style.css";
+import { AiAgentProvider } from "ai-chatbot-package-demo";
+import "ai-chatbot-package-demo/style.css";
 
 export default function App() {
   return (
@@ -107,8 +107,8 @@ The current widget uses `reply` for display. The structured `assistant` object i
 Use the provider for most apps. If you need manual placement, import the widget directly:
 
 ```jsx
-import { AiAgentWidget } from "epyc-ai-agent-widget";
-import "epyc-ai-agent-widget/style.css";
+import { AiAgentProvider } from "ai-chatbot-package-demo";
+import "ai-chatbot-package-demo/style.css";
 
 export function App() {
   return (
