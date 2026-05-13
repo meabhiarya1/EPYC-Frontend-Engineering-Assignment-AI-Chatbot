@@ -5,7 +5,7 @@ Installable React AI chatbot overlay for any frontend application. Add the packa
 ## Install
 
 ```bash
-npm install epyc-ai-agent-widget
+npm install ai-chatbot-package-demo@latest
 ```
 
 The package expects your app to already use React. It renders a floating AI chat widget at the app level and sends chat requests to the configured backend endpoint.
